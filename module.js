@@ -197,7 +197,7 @@ var modulejs, require, define;
   //事件广播
 
   function emit(name, evt) {
-    console.log(name, evt);
+    //console.log(name, evt);
     for (var i in cfg.events[name]) {
       cfg.events[name][i](evt);
     }
