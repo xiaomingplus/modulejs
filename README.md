@@ -50,11 +50,9 @@ _moduleConfig={
 };
 ```
 ###modulejs
-作为框架入口，用来加载需要的模块，并执行指定的回调,回调方法会获得唯一参数：require，通过require可以对需要用到的module进行实例、调用
+作为框架入口，用来加载需要的模块，并执行指定的回调,执行时会把相关依赖的model按照依赖顺序传入
 ```js
-modulejs(["module1","module2"], function(require) {
-  	var m1=require("module1");
-    var m2=require("module2");
+modulejs(["module1","module2"], function(m1,m2) {
     m1.dosomething();
     m2.dosomething();
 })
