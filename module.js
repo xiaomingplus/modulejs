@@ -11,6 +11,7 @@ var modulejs, require, define;
   var mod, cfg, _modulejs, _define, _require;
   var version = "1.0.1";
   var cfg = {
+    debug:false,//调试模式。
     alisa: {}, //模块的所在文件路径定义
     uris: {}, //加载文件列表 文件URL作为下标，true为已加载  false为未加载
     modules: {}, //模块列表 模块id作为下标
@@ -34,8 +35,14 @@ var modulejs, require, define;
       //如果依赖满足则开始执行并删除回调
       if (init[i] && checkDeps(init[i].dependencies)) {
         var fc = init[i].factory;
+        var deps = init[i].dependencies;
+        //把模块的相关依赖，依次作为参数传入
+        var mods = [];
+        for (var j = 0; j < deps.length; j++) {
+          mods.push(_require(deps[j]));
+        }
         init.splice(i, 1);
-        fc();
+        fc.apply(null, mods);
       }
     }
   });
@@ -96,17 +103,15 @@ var modulejs, require, define;
   function _modulejs(deps, factory) {
     //把入口回调作为一个回调模块定义，当有多个入口的时候，都放在数组里面
     _define("_init", deps, factory);
-    //加载入口回调模块的依赖方法
-    //todo:这里随便加载那个都可以，后面可以考虑一下更好的顺序
-    deps = cfg.callback.length > 0 ? cfg.callback[cfg.callback.length - 1].dependencies : [];
-    for (var i = 0; i < deps.length; i++) {
-      loadModule(deps[i]);
-    }
+    //加载入口回调模块的依赖方法，在模块检测过程中进行依赖加载
+    emit("module_ready", "");
   }
-  //递归检查深层依赖环境是否完成
+  //递归检查深层依赖环境是否完成，并加载确实的module
 
   function checkDeps(deps) {
     var list = cfg.deps;
+    //重置依赖分析数组
+    for (var i in list) list[i] = 1;
     //构造当前依赖的递归依赖
     getDesps(deps, list);
     //依次检查依赖，发现有module遗失则返回flase。进入加载流程
@@ -121,11 +126,14 @@ var modulejs, require, define;
     //获取深层依赖关系队列
 
     function getDesps(deps, list) {
+      //循环检查新的依赖队列
       for (var i = 0; i < deps.length; i++) {
+        //如果该module未在全局依赖队列中，则加入到全局队列中
         if (!list[deps[i]]) {
           list[deps[i]] = 1;
         }
-        //防止循环依赖
+        //如果该module存在，则递归构造该module的依赖队列。
+        //凡是构造过的module就把状态设置为2，防止循环依赖
         if (cfg.modules[deps[i]] && list[deps[i]] != 2) {
           list[deps[i]] = 2;
           getDesps(cfg.modules[deps[i]].dependencies, list);
@@ -197,7 +205,7 @@ var modulejs, require, define;
   //事件广播
 
   function emit(name, evt) {
-    //console.log(name, evt);
+    cfg.debug && console.log(name, evt);
     for (var i in cfg.events[name]) {
       cfg.events[name][i](evt);
     }
