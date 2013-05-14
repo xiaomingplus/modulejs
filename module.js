@@ -11,7 +11,7 @@ var modulejs, require, define;
   var mod, cfg, _modulejs, _define, _require;
   var version = "1.0.1";
   var cfg = {
-    debug:false,//调试模式。
+    debug: false, //调试模式。
     alisa: {}, //模块的所在文件路径定义
     uris: {}, //加载文件列表 文件URL作为下标，true为已加载  false为未加载
     modules: {}, //模块列表 模块id作为下标
@@ -29,23 +29,24 @@ var modulejs, require, define;
   modulejs = _modulejs; //入口
   //监听模块准备就绪的事件,并检查需要回调module的相关依赖是否全部就绪
   on("module_ready", function(id) {
-    var init = cfg.callback;
-    //倒序扫描所有的回调方法，检查要回调的module是否完成依赖加载
-    for (var i = init.length - 1; i >= 0; i--) {
+    var init = cfg.callback = cleanArray(cfg.callback);
+    //顺序扫描所有的回调方法，检查要回调的module是否完成依赖加载
+    for (var i = 0; i < init.length; i++) {
       //如果依赖满足则开始执行并删除回调
       if (init[i] && checkDeps(init[i].dependencies)) {
-        var fc = init[i].factory;
+        var cb = init[i].factory;
         var deps = init[i].dependencies;
-        //把模块的相关依赖，依次作为参数传入
-        var mods = [];
+        var mods = []; //把模块的相关依赖，依次作为参数传入
         for (var j = 0; j < deps.length; j++) {
           mods.push(_require(deps[j]));
         }
-        init.splice(i, 1);
-        fc.apply(null, mods);
+        init[i] = null;
+        cb.apply(null, mods);
+        cfg.debug && emit("callback_is_run",cb.toString().replace(/[\r\n]/g,""));
       }
     }
   });
+
   //模块定义api，有三个参数的时候第2个参数为依赖array，2个参数时，第2个为回调
 
   function _define(id, deps, factory) {
@@ -61,9 +62,7 @@ var modulejs, require, define;
       var _deps = parseDependencies(factory.toString());
     }
     //合并明文依赖和分析依赖
-    for (var i = 0; i < _deps.length; i++) {
-      (("," + deps + ",").indexOf("," + _deps[i] + ",") < 0) && deps.push(_deps[i]);
-    }
+    deps=mergeArray(deps,_deps);
     //构造一个model压入mod仓库
     var mod = new Module(id);
     mod.dependencies = deps || [];
@@ -187,7 +186,7 @@ var modulejs, require, define;
     node.src = url;
     //todo:这里可以考虑监控一下文件加载失败的情况，方便报错和监控等后续的健壮性功能
     baseElement ? head.insertBefore(node, baseElement) : head.appendChild(node);
-    emit("file_loading", url);
+    cfg.debug && emit("file_loading", url);
   }
 
 
@@ -213,7 +212,22 @@ var modulejs, require, define;
       delete cfg.events[name];
     }
   }
+  //清理数组中的空元素
 
+  function cleanArray(a) {
+    var n = [];
+    for (var i = 0; i < a.length; i++) {
+      a[i] && n.push(a[i]);
+    }
+    return a;
+  }
+  //去重合并数组
+  function mergeArray(a,b){
+    for (var i = 0; i < b.length; i++) {
+      (("," + a + ",").indexOf("," + b[i] + ",") < 0) && a.push(b[i]);
+    }
+    return a;
+  }
   //对象类型判断
 
   function isType(type, obj) {
