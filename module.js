@@ -10,9 +10,10 @@ var modulejs, require, define;
 (function(global) {
   var mod, cfg, _modulejs, _define, _require;
   var version = "1.0.1";
-  var cfg = {
+  cfg = {
     debug: false, //调试模式。
     alisa: {}, //模块的所在文件路径定义
+    vars:{},  //变量模块名
     uris: {}, //加载文件列表 文件URL作为下标，true为已加载  false为未加载
     modules: {}, //模块列表 模块id作为下标
     callback: [], //入口回调方法的数组,所有modulejs所定义的方法都压入这个数组
@@ -80,6 +81,7 @@ var modulejs, require, define;
   //模块实例化或返回实例
 
   function _require(id) {
+    id=parseVars(id);//解析变量依赖
     var module = cfg.modules[id];
     // 如果module不存在则返回null
     if (!module) {
@@ -140,7 +142,17 @@ var modulejs, require, define;
       }
     }
   }
-
+  //解析变量模块名
+  function parseVars(id) {
+    var VARS_RE = /{([^{]+)}/g
+    var vars = cfg.vars
+    if (vars && id.indexOf("{") > -1) {
+      id = id.replace(VARS_RE, function(m, key) {
+        return isType("String",vars[key]) ? vars[key] : m
+      })
+    }
+    return id
+  }
   //配置方法
 
   function config(obj) {
@@ -240,7 +252,7 @@ var modulejs, require, define;
     var cjsRequireRegExp = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g;
     var ret = [];
     code.replace(commentRegExp, "").replace(cjsRequireRegExp, function(match, dep) {
-      dep && ret.push(dep);
+      dep && ret.push(parseVars(dep));
     })
     return ret;
   }
