@@ -1,5 +1,5 @@
 /**
- * modulejs 1.0.1
+ * modulejs 1.0.2
  * author:kpxu\jimyan\wowowang
  * description:
  *   modulejs是一款比seajs、commonjs更加简洁、小巧的javascript模块化开发管理工具。
@@ -9,7 +9,7 @@
 var modulejs, require, define;
 (function(global) {
   var mod, cfg, _modulejs, _define, _require;
-  var version = "1.0.1";
+  var version = "1.0.2";
   cfg = {
     debug: false, //调试模式。
     alisa: {}, //模块的所在文件路径定义
@@ -105,7 +105,7 @@ var modulejs, require, define;
     //把入口回调作为一个回调模块定义，当有多个入口的时候，都放在数组里面
     _define("_init", deps, factory);
     //加载入口回调模块的依赖方法，在模块检测过程中进行依赖加载
-    emit("module_ready", "");
+    emit("module_ready", "_init");
   }
   //递归检查深层依赖环境是否完成，并加载确实的module
 
