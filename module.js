@@ -3,7 +3,7 @@
  * author:kpxu\jimyan\wowowang
  * description:
  *   modulejs是一款比seajs、commonjs更加简洁、小巧的javascript模块化开发管理工具。
- *   思路更加精巧优雅，包含注释在内只有222行，同时也吸收了seajs和requirejs的一些优点
+ *   思路精巧优雅，包含注释在内只有222行，同时也吸收了seajs和requirejs的一些优点
  * see：https://github.com/eccued/modulejs
  */
 var modulejs, require, define;
@@ -12,13 +12,13 @@ var modulejs, require, define;
   var version = "1.0.2";
   cfg = {
     debug: false, //调试模式。
-    alisa: {}, //模块的所在文件路径定义
+    alias: {}, //模块的所在文件路径定义
     vars:{},  //变量模块名
     uris: {}, //加载文件列表 文件URL作为下标，true为已加载  false为未加载
     modules: {}, //模块列表 模块id作为下标
     callback: [], //入口回调方法的数组,所有modulejs所定义的方法都压入这个数组
     deps: {}, //记录运行中需要用到的依赖队列
-    events: {}, //消息队列
+    events: {} //消息队列
   };
   //读取预配置
   _modulejs.config = config;
@@ -178,10 +178,10 @@ var modulejs, require, define;
       return;
     }
     //查找module所对应的文件
-    //todo:这里可以考虑支持把没有alisa配置的module按照某些规则生成一条url进行加载。
-    var url = cfg.alisa[id] ? cfg.alisa[id] : "";
+    //todo:这里可以考虑支持把没有alias配置的module按照某些规则生成一条url进行加载。
+    var url = cfg.alias[id] ? cfg.alias[id] : "";
     if (!url) {
-      emit("module_loss_alisa", id);
+      emit("module_loss_alias", id);
       return;
     }
     //检查是否已经加载该文件，如果文件已经在加载队列，则返回，等待后续代码的执行
@@ -231,7 +231,7 @@ var modulejs, require, define;
     for (var i = 0; i < a.length; i++) {
       a[i] && n.push(a[i]);
     }
-    return a;
+    return n;
   }
   //去重合并数组
   function mergeArray(a,b){
