@@ -99,6 +99,19 @@ var modulejs, require, define;
     module.exports = exports === undefined ? module.exports : exports;
     return module.exports; //require一个模块的结果是返回该module的exports
   }
+
+  _require.async = _modulejs;
+
+  _require.css = function(url){
+    var node = document.createElement("link");
+    node.charset = "utf-8";
+    node.rel = "stylesheet"
+    node.href = url
+
+    var head = document.getElementsByTagName("head")[0] || document.documentElement;
+    var baseElement = head.getElementsByTagName("base")[0];
+    baseElement ? head.insertBefore(node, baseElement) : head.appendChild(node);
+  }
   //入口方法
 
   function _modulejs(deps, factory) {
@@ -110,9 +123,12 @@ var modulejs, require, define;
   //递归检查深层依赖环境是否完成，并加载确实的module
 
   function checkDeps(deps) {
-    var list = cfg.deps;
+    //var list = cfg.deps,
+    var list = {},
+        flag = true;
     //重置依赖分析数组
-    for (var i in list) list[i] = 1;
+    for(var i=0;i<deps.length;i++) list[deps[i]] = 1;
+    //for (var i in list) list[i] = 1;
     //构造当前依赖的递归依赖
     getDesps(deps, list);
     //依次检查依赖，发现有module遗失则返回flase。进入加载流程
@@ -120,10 +136,10 @@ var modulejs, require, define;
       //检查该依赖模块是否遗失，如果遗失则中断检查去加载
       if (!cfg.modules[i]) {
         loadModule(i);
-        return false;
+        flag = false;
       }
     }
-    return true;
+    return flag;
     //获取深层依赖关系队列
 
     function getDesps(deps, list) {
@@ -159,7 +175,7 @@ var modulejs, require, define;
     for (var k in obj) {
       cfg[k] = obj[k];
     }
-    return mod;
+    return cfg;
   }
   //module原型
 
