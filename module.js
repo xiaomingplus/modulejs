@@ -1,5 +1,27 @@
 /**
- * modulejs 1.0.2
+ * JSON支持
+ * @param  {[type]} ){function f(n){return  n<10?"0"+n:n;}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(key){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds() [description]
+ * @return {[type]}             [description]
+ */
+if(typeof JSON!=="object"){JSON={};}(function(){function f(n){return n<10?"0"+n:n;}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(key){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null;
+};String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(key){return this.valueOf();};}var cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,escapable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta={"\b":"\\b","\t":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},rep;
+function quote(string){escapable.lastIndex=0;return escapable.test(string)?'"'+string.replace(escapable,function(a){var c=meta[a];return typeof c==="string"?c:"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4);
+})+'"':'"'+string+'"';}function str(key,holder){var i,k,v,length,mind=gap,partial,value=holder[key];if(value&&typeof value==="object"&&typeof value.toJSON==="function"){value=value.toJSON(key);
+}if(typeof rep==="function"){value=rep.call(holder,key,value);}switch(typeof value){case"string":return quote(value);case"number":return isFinite(value)?String(value):"null";
+case"boolean":case"null":return String(value);case"object":if(!value){return"null";}gap+=indent;partial=[];if(Object.prototype.toString.apply(value)==="[object Array]"){length=value.length;
+for(i=0;i<length;i+=1){partial[i]=str(i,value)||"null";}v=partial.length===0?"[]":gap?"[\n"+gap+partial.join(",\n"+gap)+"\n"+mind+"]":"["+partial.join(",")+"]";
+gap=mind;return v;}if(rep&&typeof rep==="object"){length=rep.length;for(i=0;i<length;i+=1){if(typeof rep[i]==="string"){k=rep[i];v=str(k,value);if(v){partial.push(quote(k)+(gap?": ":":")+v);
+}}}}else{for(k in value){if(Object.prototype.hasOwnProperty.call(value,k)){v=str(k,value);if(v){partial.push(quote(k)+(gap?": ":":")+v);}}}}v=partial.length===0?"{}":gap?"{\n"+gap+partial.join(",\n"+gap)+"\n"+mind+"}":"{"+partial.join(",")+"}";
+gap=mind;return v;}}if(typeof JSON.stringify!=="function"){JSON.stringify=function(value,replacer,space){var i;gap="";indent="";if(typeof space==="number"){for(i=0;
+i<space;i+=1){indent+=" ";}}else{if(typeof space==="string"){indent=space;}}rep=replacer;if(replacer&&typeof replacer!=="function"&&(typeof replacer!=="object"||typeof replacer.length!=="number")){throw new Error("JSON.stringify");
+}return str("",{"":value});};}if(typeof JSON.parse!=="function"){JSON.parse=function(text,reviver){var j;function walk(holder,key){var k,v,value=holder[key];
+if(value&&typeof value==="object"){for(k in value){if(Object.prototype.hasOwnProperty.call(value,k)){v=walk(value,k);if(v!==undefined){value[k]=v;}else{delete value[k];
+}}}}return reviver.call(holder,key,value);}text=String(text);cx.lastIndex=0;if(cx.test(text)){text=text.replace(cx,function(a){return"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4);
+});}if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){j=eval("("+text+")");
+return typeof reviver==="function"?walk({"":j},""):j;}throw new SyntaxError("JSON.parse");};}}());
+
+/**
+ * modulejs 1.0.3
  * author:kpxu\jimyan\wowowang
  * description:
  *   modulejs是一款比seajs、commonjs更加简洁、小巧的javascript模块化开发管理工具。
@@ -9,14 +31,20 @@
 var modulejs, require, define;
 (function(global) {
   var mod, cfg, _modulejs, _define, _require;
-  var version = "1.0.2";
+  var version = "1.0.3";
+  var isCache=true;
+  var cacheTime = 60*60*24*30*1000;//一个月
   cfg = {
-    debug: false, //调试模式。
+    debug: location.href.indexOf("mdebug=1")!=-1?true:false, //调试模式。
     alias: {}, //模块的所在文件路径定义
+    moduleURI:{},//模块的单独访问uri
     vars:{},  //变量模块名
     uris: {}, //加载文件列表 文件URL作为下标，true为已加载  false为未加载
     modules: {}, //模块列表 模块id作为下标
     callback: [], //入口回调方法的数组,所有modulejs所定义的方法都压入这个数组
+    actModules:{},//被require激活使用的module列表
+    cacheLoad:{},//被加载的cache 模块列表
+    cacheDel:{},//被删除的module cache
     deps: {}, //记录运行中需要用到的依赖队列
     events: {} //消息队列
   };
@@ -41,16 +69,185 @@ var modulejs, require, define;
         for (var j = 0; j < deps.length; j++) {
           mods.push(_require(deps[j]));
         }
+        debug("callback_is_run=start",cb.toString(),cfg.callback);
         init[i] = null;
         cb.apply(null, mods);
         cfg.debug && emit("callback_is_run",cb.toString().replace(/[\r\n]/g,""));
       }
     }
   });
+  //module被引用
+  on("module_require", function(id) {
+    cfg.actModules[id]=cfg.actModules[id]?(cfg.actModules[id]+1):1;
+  });
+  //cache被删除
+  on("module_cacheDel", function(id) {
+    cfg.cacheDel[id]=1;
+  });
+  //cache被加载
+  on("cache_load", function(m) {
+    cfg.cacheLoad[m.id]=1;
+  });
+  
+  //加载缓存的模块
+  _loadCache();
+  /**
+   * 加载缓存的modules
+   * @return {[type]} [description]
+   */
+  function _loadCache(){
+    if(!_useCache()){return false;}
+    localStorage.removeItem("_modules");//删除之前的cache
+    //读cache，并清理无效内容
+    //var _t=localStorage.getItem("_modules");
+    //var ms=_t?JSON.parse(_t):{};
+    for(var key in localStorage){
+      if(/^_m_/.test(key)){
+        var store = JSON.parse(localStorage.getItem(key));
+        var i = key.substr(3);
+        if(cfg.alias[i]){
+          if(_getModuleURI(i)!=store.path){
+            emit("module_cacheDel",i);
+            localStorage.removeItem(key);
+            continue;
+          }
+        }else{
+          //已经过期
+          if((new Date()).getTime()>store.cacheTime){
+            emit("module_cacheDel",i);
+            localStorage.removeItem(key);
+            continue;
+          }
+        }
 
+        store.cacheTime=(new Date()).getTime() + cacheTime;//更新过期时间，每次续期一个月
+        isCache=false;
+        emit("cache_load",store);
+        _define(store.id,store.deps,eval("("+store.factory+")"));
+        isCache=true;
+        try{
+          localStorage.removeItem(key);
+          localStorage.setItem(key, JSON.stringify(store));
+        }
+        catch(e){}
+      }
+    }
+    /**
+     * 这里对cache的检查有两个原则：
+     * 1、path路径发生变化的cache一律作为，未来可能会考虑版本号的问题。这里不考虑
+     * 2、本入口alisa中未定义的module可能会在其他入口中用到，不能随便清除，所以加一个有效期逻辑，超过有效期的cache做删除动作，防止localstorage无线增长。
+     */
+    /*
+    for(var i in ms){
+      //检查alisa中定义的module，path变化的要清理，无变化的修改最后使用时间并加载
+      if(cfg.alias[i]){
+        if(_getModuleURI(i)!=ms[i].path){
+          emit("module_cacheDel",i);
+          ms[i]=null; delete(ms[i]);
+          continue;
+        }
+      }else{
+        //alisa中未定义的module，检查最后使用时间，超过1个月未使用的module清理掉
+        if(((new Date()).getTime()-60*60*24*30)>ms[i].cacheTime){
+          emit("module_cacheDel",i);
+          ms[i]=null; delete(ms[i]);
+          continue;
+        }
+      }
+      //走到这里说明cache有效也是alisa中要用到的module，可以直接加载，打标记，停止cache期间的define再次触发cache
+      //重载过的module cache修改使用时间
+      ms[i].cacheTime=(new Date()).getTime();
+      isCache=false;
+      emit("cache_load",ms[i]);
+      _define(ms[i].id,ms[i].deps,eval("("+ms[i].factory+")"));
+      isCache=true;
+    }
+    //cache加载结束再回写一下cache
+    try{
+      localStorage.removeItem("_modules");
+      localStorage.setItem("_modules", JSON.stringify(ms));
+    }
+    catch(e){
+
+    }*/
+  }
+  /**
+   * 获取模块的唯一访问路径
+   * @param  {[type]} id [description]
+   * @return {[type]}    [description]
+   */
+  function _getModuleURI(id){
+    return cfg.moduleURI[id]?cfg.moduleURI[id]:cfg.alias[id];
+  }
+  /**
+   * 使用模块缓存
+   */
+  function _useCache(id, deps, factory){
+    //return false;
+    //不支持JSON对象的时候不启用cache
+    if(typeof(JSON)=="undefined"){return false;}
+    //cache开关关闭的的时候不使用cache
+    if(!isCache){return false;}
+    //不支持JSON和localstorage则不做cache
+    if(!(JSON && window.localStorage)){return false;}
+    //开发模式下不使用缓存
+    if(cfg.debug){return false;}
+
+    var agent = navigator.userAgent.toLowerCase();
+    if(agent.indexOf("msie") > 0){
+      var m = agent.match(/msie\s([\d\.]+);/i);
+      if(m && m.length>=2 && parseInt(m[1])<=8){
+        return false;
+      }
+    }
+
+    //_下划线开头的module为临时module，不操作cache
+    if(id && id.indexOf("_")==0){return false;}
+    //factory代码中不包含关键词“_cacheThisModule_”的不缓存
+    if(factory && factory.toString().indexOf("_cacheThisModule_")<0){return false;}
+    return true;
+  }
+
+  
+  /**
+   * 缓存模块
+   * @param  {[type]} id      [description]
+   * @param  {[type]} deps    [description]
+   * @param  {[type]} factory [description]
+   * @return {[type]}         [description]
+   */
+  function _cacheModule(id, deps, factory){
+    //写入cache
+    var key = "_m_"+id;
+    var _t=localStorage.getItem(key);
+    var ms = _t?JSON.parse(_t):{};
+    ms = {"id":id,"deps":deps,"factory":factory.toString(),"path":_getModuleURI(id),"cacheTime":(new Date()).getTime() + cacheTime};
+    try{
+      localStorage.removeItem(key);
+      localStorage.setItem(key, JSON.stringify(ms));
+      emit("module_cached",id);
+    }
+    catch(e){
+    }
+
+    /*
+    var _t=localStorage.getItem("_modules");
+    var ms=_t?JSON.parse(_t):{};
+    ms[id]={"id":id,"deps":deps,"factory":factory.toString(),"path":_getModuleURI(id),"cacheTime":(new Date()).getTime()};
+    try{
+      localStorage.removeItem("_modules");
+      localStorage.setItem("_modules", JSON.stringify(ms));
+      emit("module_cached",id);
+    }
+    catch(e){
+
+    }   
+    */ 
+  }
   //模块定义api，有三个参数的时候第2个参数为依赖array，2个参数时，第2个为回调
 
   function _define(id, deps, factory) {
+    
     //只有两个参数的时候，表示忽略了deps
     if (arguments.length === 2) {
       factory = deps;
@@ -64,6 +261,8 @@ var modulejs, require, define;
     }
     //合并明文依赖和分析依赖
     deps=mergeArray(deps,_deps);
+    //将模块cache起来
+    _useCache(id, deps, factory) && _cacheModule(id, deps, factory);
     //构造一个model压入mod仓库
     var mod = new Module(id);
     mod.dependencies = deps || [];
@@ -83,8 +282,10 @@ var modulejs, require, define;
   function _require(id) {
     id=parseVars(id);//解析变量依赖
     var module = cfg.modules[id];
+    emit("module_require", id);
     // 如果module不存在则返回null
     if (!module) {
+      emit("module_error", id);
       return null
     }
     //如果module的exports不为null，则说明已经实例化了。
@@ -102,7 +303,8 @@ var modulejs, require, define;
 
   _require.async = _modulejs;
 
-  _require.css = function(url){
+  _require.css = function(path){
+    /*
     var node = document.createElement("link");
     node.charset = "utf-8";
     node.rel = "stylesheet"
@@ -111,6 +313,20 @@ var modulejs, require, define;
     var head = document.getElementsByTagName("head")[0] || document.documentElement;
     var baseElement = head.getElementsByTagName("base")[0];
     baseElement ? head.insertBefore(node, baseElement) : head.appendChild(node);
+    */
+    if(!path){return;}
+    var l;
+    if(!window["_loadCss"] || window["_loadCss"].indexOf(path)<0){
+            l = document.createElement('link');
+            l.setAttribute('type', 'text/css');
+            l.setAttribute('rel', 'stylesheet');
+            l.setAttribute('href', path);
+            l.setAttribute("id","loadCss"+Math.random());
+            document.getElementsByTagName("head")[0].appendChild(l);
+            window["_loadCss"]?(window["_loadCss"]+="|"+path):(window["_loadCss"]="|"+path);
+    }
+    l&&(typeof callback=="function")&&(l.onload=callback);
+    return true;
   }
   //入口方法
 
@@ -175,7 +391,7 @@ var modulejs, require, define;
     for (var k in obj) {
       cfg[k] = obj[k];
     }
-    return cfg;
+    return mod;
   }
   //module原型
 
@@ -217,8 +433,6 @@ var modulejs, require, define;
     cfg.debug && emit("file_loading", url);
   }
 
-
-
   //事件监听
 
   function on(name, cb) {
@@ -232,8 +446,13 @@ var modulejs, require, define;
   //事件广播
 
   function emit(name, evt) {
-    cfg.debug && console.log(name, evt);
-    for (var i in cfg.events[name]) {
+    debug(name,evt);
+    
+    if(!cfg.events[name] || cfg.events[name].length==0){
+      return;
+    }
+    //for (var i in cfg.events[name]) {
+    for(var i=0,l=cfg.events[name].length;i<l;i++){
       cfg.events[name][i](evt);
     }
     if (name === 'error') {
@@ -271,5 +490,20 @@ var modulejs, require, define;
       dep && ret.push(parseVars(dep));
     })
     return ret;
+  }
+
+  function debug(){
+    if(!cfg.debug){
+      return true;
+    }
+    var a=[],l=arguments.length;
+    for(var i=0;i<l;i++){
+      a.push(arguments[i]);
+    }
+    try{
+      console.log.apply(console,a);
+    }
+    catch(e){
+    }
   }
 }(this));
