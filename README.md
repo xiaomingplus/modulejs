@@ -13,13 +13,13 @@ modulejs是一款比seajs、commonjs更加简洁、小巧的javascript模块化�
 * 实现中不涉及任何浏览器特性，所以不存在浏览器兼容性问题.
 * 能够对module定义文件进行自由合并，不需要额外打包部署工具.
 * 代码结构极其简洁明了，你可以轻易的阅读，并按照你的实际情况进行适配定制.
-* modulejs要求对所有module都定一个id，且需要明文在alisa中描述module的实现文件路径
+* modulejs要求对所有module都定一个id，且需要明文在alias中描述module的实现文件路径
 
 ##Change Log
 ### v1.0.1
 * 4月1日发布的seajs2.0让我们产生了自己开发一套模块加载和管理工具的冲动。主要解决了几个在我们项目中用着不太爽的部分：
 * 所有的模块定义文件可以自由的进行合并、组合，不限定一个define一个文件或者部署的时候需要相关的配置工具支持。
-* 把alisa作为了配置核心，框架需要明文声明每个module id所对应的url，不再依赖路径规则进行分析
+* 把alias作为了配置核心，框架需要明文声明每个module id所对应的url，不再依赖路径规则进行分析
 * 支持在modulejs文件加载前预设置配置，通过_moduleConfig全局变量赋值即可。
 * define的时候可以明文指定依赖和静态分析依赖，最终会进行合并
 * 深入的分析了一下模块加载和管理原理，发现模块管理根本可以不依赖于浏览器那不靠谱的onload事件。我们实现了。
@@ -27,12 +27,12 @@ modulejs是一款比seajs、commonjs更加简洁、小巧的javascript模块化�
 
 ##API
 ###modulejs.config
-用来对modulejs进行配置，目前只支持对alisa进行配置，且alisa为必须配置，框架要求对使用中所有需要用到的module进行明文描述,
+用来对modulejs进行配置，目前只支持对alias进行配置，且alias为必须配置，框架要求对使用中所有需要用到的module进行明文描述,
 描述中module id可以多个id指向到同一个url。
 定义完成后，可以将module id作为唯一标识，自由的引用module。
 ```js
 modulejs.config({
-  alisa:{
+  alias:{
     "module1":"http://www.demo.com/js/modules.js",
     "module2":"http://www.demo.com/js/modules.js",
     "module3":"http://www.demo2.com/js/xxx.js"
@@ -42,7 +42,7 @@ modulejs.config({
 在某些情况下可能有需要在框架载入前进行配置输出的情况，这时只需要使用如下变量进行配置即可：
 ```js
 _moduleConfig={
-  alisa:{
+  alias:{
     "module1":"http://www.demo.com/js/modules.js",
     "module2":"http://www.demo.com/js/modules.js",
     "module3":"http://www.demo2.com/js/xxx.js"
